@@ -1,0 +1,15 @@
+*.exe
+*.obj
+*.o
+*.out
+*.dll
+*.lib
+*.exp
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+Thumbs.db
+ehthumbs.db
+Desktop.ini
