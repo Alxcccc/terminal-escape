@@ -3,12 +3,14 @@
 #include <windows.h>
 #include <string.h>
 
+/* 10x10 grid representing the game world, initially filled with '#' walls */
 typedef struct {
     char matrix[10][10];
     size_t rows;
     size_t columns;
 } Map;
 
+/* Entity on the map with a display token and grid coordinates */
 typedef struct {
     const char token;
     int x;
@@ -20,6 +22,7 @@ void map_init(Map* m);
 void showMap(Map map);
 void moveObject(Object* player, int deltaX, int deltaY, Object wall, Object enemy, int spawn[2], Map* m);
 
+/* Game loop: read input, update state, render map until win or ESC */
 int main(){
     Map map;
     map_init(&map);
@@ -50,7 +53,7 @@ int main(){
             break;
         }
 
-        // Movement Keys - Look how clean this is now!
+        // Movement Keys
         if (GetAsyncKeyState('W') & 0x8000) {
             moveObject(&player, -1, 0, wall, enemy, playerSpawn, &map);
         }
@@ -67,18 +70,20 @@ int main(){
         system("cls");
         showMap(map);
 
-        Sleep(500); 
+        Sleep(400); 
     }
     
     return 0;
 }
 
+/* Fill entire matrix with '#' wall tiles */
 void map_init(Map* m){
     m->rows = 10;
     m->columns = 10;
     memset(m->matrix, '#', sizeof(m->matrix));
 }
 
+/* Print the game grid to the console */
 void showMap(Map m) {
     for (size_t i = 0; i < m.rows; i++) {
         for (size_t j = 0; j < m.columns; j++) {
@@ -88,34 +93,37 @@ void showMap(Map m) {
     }
 }
 
-// The new universal movement function
+/* Move the player by (deltaX, deltaY) handling collisions with walls and enemies */
+/*
+ * Collision order: bounds -> wall (blocked) -> enemy (respawn) -> move
+ */
 void moveObject(Object* player, int deltaX, int deltaY, Object wall, Object enemy, int spawn[2], Map* m) {
-    // 1. Calculate where the player WANTS to go
+
     int nextX = player->x + deltaX;
     int nextY = player->y + deltaY;
 
-    // 2. Map Boundary Check (Fixed the rows vs columns bug here)
+    // Out of bounds
     if (nextX < 0 || nextX >= m->rows || nextY < 0 || nextY >= m->columns) {
-        return; // Out of bounds, stop function immediately
+        return;
     }
 
-    // 3. Wall Collision Check (Affirmative logic is much easier to read)
+    // Wall collision — blocked
     if (nextX == wall.x && nextY == wall.y) {
-        return; // Hit a wall, stop function immediately
+        return;
     }
-
-    // 4. Enemy Collision (Respawn Logic)
+    
+    // Enemy collision — respawn to spawn point
     if (nextX == enemy.x && nextY == enemy.y) {
-        m->matrix[player->x][player->y] = '#'; // Clear old spot
-        player->x = spawn[0];                  // Reset coordinates
+        m->matrix[player->x][player->y] = '#';
+        player->x = spawn[0];
         player->y = spawn[1];
-        m->matrix[player->x][player->y] = player->token; // Draw at spawn
+        m->matrix[player->x][player->y] = player->token;
         return; 
     }
 
-    // 5. Normal Movement (If we made it past all the checks above)
-    m->matrix[nextX][nextY] = player->token;   // Draw player at new spot
-    m->matrix[player->x][player->y] = '#';     // Leave a trail behind
-    player->x = nextX;                         // Update player's actual X
-    player->y = nextY;                         // Update player's actual Y
+    // Normal move
+    m->matrix[nextX][nextY] = player->token;
+    m->matrix[player->x][player->y] = '#';   
+    player->x = nextX;  
+    player->y = nextY;
 }
